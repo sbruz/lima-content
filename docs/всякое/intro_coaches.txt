@@ -1,0 +1,47 @@
+Изменения по шагу 04_generate_episode_ideas:
+
+Изменения в БД:
+   1) Добавил таблицу coaches. Поля: coach, prompt.
+   2) Добавил таблицу affirmations. Поля: subcategory_id, coach_id, affirmation, position, script, music.
+   3) Удалил поля и `subcategories.idea` и `subcategories.idea_status`.
+   4) Удалил таблицу episodes.
+   5) В конфиге добавил параметр со списком "versions: [Roxie, Goddard]".
+   6) В конфиге gеременовал episodes_per_subcategory в affirmations_per_subcategory
+   7) В конфиге удалил диапазон episodes
+   8) В конфиге переименовал флаги generate_episodes в generate_affirmations, localize_episode_texts в script_affirmations, markup_scripts в music_prompts
+
+Изменения в логике:
+1) ### Шаг 4. Планирование эпизодов
+Заменяем на "Планирование аффирмаций".
+Флаг generate_affirmations.
+Логика:
+- выбрать категории и подкатегории по диапазонам в конфиге
+- выбрать тренеров из coach по списку в конфиге
+- обратиться к LLM
+   - поочереди для каждой категории, подкатегории и тренера передать категорию, подкатегорию, coaches.prompt с промтом описывающим роль, affirmations_base.md с промтом, описывающим формат входных/выходных данных
+   - получить от LLM список из affirmations_per_subcategory аффирмаций для каждого пола (женщины, мужчины), соответствующих стилю тренера (coaches.prompt). Каждая аффирмация для женщин и мужчин - JSON из двух элементов: аффирмация и сцена на английском языке.
+   - сохранить аффирмации в виде отдельных строк в поле affirmations.affirmation, affirmations.position пронумеровать от 1 до affirmations_per_subcategory (затереть, если непустое)
+
+2) ### Шаг 5. Скрипты аффирмаций
+Флаг script_affirmations.
+Логика:
+- выбрать категории и подкатегории по диапазонам в конфиге
+- выбрать тренеров из coach по списку в конфиге
+- выбрать список языков
+- Обратиться к LLM
+   - для каждого языка выполнить две последовательные подзадачи:
+     1. **Перевод** (промпт `affirmations_script_translate.md`): подаём `affirmations.affirmation`, `coaches.prompt`, `target_language`. Для EN шаг перевода пропускаем.
+     2. **Расстановка пауз** (промпт `affirmations_script_pauses.md`): на вход отдаём результат перевода (или исходник для EN), чтобы LLM расставила `\n`.
+   - обе подзадачи возвращают одинаковый JSON `{"affirmation":{"female":{"title","script"},"male":{"title","script"}}}`
+   - после шага пауз сохранить результат в поле `affirmations.script` (затереть, если непустое)
+
+3) Шаг 6. Разметка для озвучки (TTS)
+Заменяем на "Промт для музыки".
+Флаг music_prompts.
+Логика:
+- выбрать категории и подкатегории по диапазонам в конфиге
+- выбрать тренеров из coach по списку в конфиге
+- Обратиться к LLM
+   - поочереди передать affirmations.affirmation, coaches.prompt с промтом описывающим роль, affirmations_music.md с промтом, описывающим формат входных/выходных данных
+   - получить от LLM список из affirmations_per_subcategory промтов для музыки к аффирмациями в тестовом виде
+   - сохранить в поле affirmations.music (затереть, если непустое)

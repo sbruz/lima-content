@@ -1,0 +1,33 @@
+Обновление шага 99:
+Формируем не json-файлы, а сразу файлы content_<язык>.db с базами данных SQLite для использования в приложении.
+
+Структура базы:
+
+1. Таблица categories
+id INTEGER PRIMARY KEY - копируем из основной БД (categories.id)
+position INTEGER - позиция (categories.position)
+name - название на языке (categories.localization)
+
+2. Таблица subcategories
+id INTEGER PRIMARY KEY - копируем из основной БД (subcategories.id)
+position INTEGER - позиция (subcategories.position)
+name - название на языке (subcategories.localization)
+
+3. Таблица coaches
+id INTEGER PRIMARY KEY - копируем из основной БД (coach.id)
+position INTEGER - позиция (coaches.position)
+name - имя без локализации (coaches.coach_name)
+description - описание с локализацией (coaches.coach_UI_description)
+
+4. Таблица affirmations
+sub_id INTEGER FOREIGN KEY - ссылка на поле subcategories.id
+coach_id INTEGER FOREIGN KEY - ссылка на поле coaches.id
+position INTEGER - значение из affrirmations_new.position
+gender boolean - значение из affrirmations_new.script (0 - female, 1 - male)
+language TEXT NOT NULL - значение из affrirmations_new.script
+title TEXT NOT NULL - значение из affrirmations_new.script
+subtitle TEXT NOT NULL - значение из affrirmations_new.script
+script TEXT NOT NULL - значение из affrirmations_new.popular_aff
+is_morning boolean - значение из allowed_for_daily
+is_afternoon boolean - значение из allowed_for_daily
+is_night boolean - значение из allowed_for_daily
