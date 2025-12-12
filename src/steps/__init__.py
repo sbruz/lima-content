@@ -15,6 +15,7 @@ from .step8_compose_music import Step8ComposeMusic
 from .step9_make_affirmations import Step9MakeAffirmations
 from .step10_daily_affirmations import Step10DailyAffirmations
 from .step11_popular_affirmations import Step11PopularAffirmations
+from .step12_gentle_affirmations import Step12CoachAffirmationForTimeOfDay
 from .step99_export_data import Step99ExportData
 
 
@@ -32,6 +33,7 @@ def build_steps(config: Config) -> List:
         Step9MakeAffirmations(config),
         Step10DailyAffirmations(config),
         Step11PopularAffirmations(config),
+        Step12CoachAffirmationForTimeOfDay(config),
         Step99ExportData(config),
     ]
 

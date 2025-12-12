@@ -69,6 +69,9 @@ class Step99ExportData(BaseStep):
             self._init_schema(conn)
             inserted = self._export_language(conn, language, total_categories)
             conn.commit()
+        except Exception as exc:
+            logger.exception("[BUSINESS] Export failed", lang=language, error=str(exc))
+            raise
         finally:
             conn.close()
         logger.info(
@@ -102,8 +105,13 @@ class Step99ExportData(BaseStep):
                 parsed_sub_loc = self._parse_json(subcategory.get("localization"))
                 sub_entry = {
                     "id": subcategory["id"],
+                    "category_id": subcategory.get("category_id"),
                     "position": subcategory.get("position"),
                     "localization": parsed_sub_loc,
+                    "shadow_w": subcategory.get("shadow_w"),
+                    "shadow_m": subcategory.get("shadow_m"),
+                    "views": subcategory.get("views"),
+                    "is_daily_suitable": subcategory.get("is_daily_suitable"),
                     "coaches": [],
                 }
                 for coach in coaches:
@@ -119,17 +127,18 @@ class Step99ExportData(BaseStep):
                         "coach": coach.get("coach"),
                         "coach_name": coach.get("coach_name"),
                         "description": self._parse_json(coach.get("coach_UI_description")),
-                        "records": [
-                            {
-                                "id": record["id"],
-                                "position": record.get("position"),
-                                "script": self._parse_json(record.get("script")),
-                                "popular": self._parse_json(record.get("popular_aff")),
-                            }
-                            for record in records
-                        ],
-                    }
-                    sub_entry["coaches"].append(coach_entry)
+                    "records": [
+                        {
+                            "id": record["id"],
+                            "position": record.get("position"),
+                            "script": self._parse_json(record.get("script")),
+                            "popular": self._parse_json(record.get("popular_aff")),
+                            "banners": self._parse_json(record.get("aff_for_banners")),
+                        }
+                        for record in records
+                    ],
+                }
+                sub_entry["coaches"].append(coach_entry)
                 if sub_entry["coaches"]:
                     cat_entry["subcategories"].append(sub_entry)
             if cat_entry["subcategories"]:
@@ -153,6 +162,10 @@ class Step99ExportData(BaseStep):
                 id INTEGER PRIMARY KEY,
                 position INTEGER,
                 name TEXT NOT NULL,
+                shadow_w TEXT NOT NULL,
+                shadow_m TEXT NOT NULL,
+                views INTEGER NOT NULL,
+                is_daily_suitable INTEGER NOT NULL,
                 category_id INTEGER NOT NULL,
                 FOREIGN KEY(category_id) REFERENCES categories(id)
             )
@@ -178,6 +191,9 @@ class Step99ExportData(BaseStep):
                 title TEXT NOT NULL,
                 subtitle TEXT NOT NULL,
                 script TEXT NOT NULL,
+                morning_aff TEXT,
+                afternoon_aff TEXT,
+                evening_aff TEXT,
                 is_morning INTEGER NOT NULL,
                 is_afternoon INTEGER NOT NULL,
                 is_night INTEGER NOT NULL,
@@ -213,8 +229,21 @@ class Step99ExportData(BaseStep):
                 sub_id = subcategory["id"]
                 if sub_id not in inserted_subcategories:
                     cur.execute(
-                        "INSERT INTO subcategories (id, position, name, category_id) VALUES (?, ?, ?, ?)",
-                        (sub_id, subcategory.get("position"), sub_name, cat_id),
+                        """
+                        INSERT INTO subcategories (
+                            id, position, name, shadow_w, shadow_m, views, is_daily_suitable, category_id
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            sub_id,
+                            subcategory.get("position"),
+                            sub_name,
+                            subcategory.get("shadow_w"),
+                            subcategory.get("shadow_m"),
+                            subcategory.get("views"),
+                            self._compute_daily_suitable(subcategory),
+                            cat_id,
+                        ),
                     )
                     inserted_subcategories.add(sub_id)
                 for coach in subcategory["coaches"]:
@@ -265,46 +294,65 @@ class Step99ExportData(BaseStep):
         sub_pos = subcategory.get("position")
         for record in coach["records"]:
             for gender in self.GENDERS:
-                entry = self._extract_script_entry(
-                    record["script"],
-                    record.get("popular"),
-                    gender,
-                    language,
-                    category,
-                    subcategory,
-                    coach,
-                )
-                if not entry:
-                    continue
-                record_pos = record.get("position")
-                is_flags = {
-                    time_of_day: int(
-                        self._has_preview(cat_pos, sub_pos, coach_id, record_pos, gender, language, time_of_day)
+                try:
+                    entry = self._extract_script_entry(
+                        record["script"],
+                        record.get("popular"),
+                        record.get("banners"),
+                        gender,
+                        language,
+                        category,
+                        subcategory,
+                        coach,
                     )
-                    for time_of_day in self.TIMES
-                }
-                gender_flag = 1 if gender == "male" else 0
-                cur.execute(
-                    """
-                    INSERT INTO affirmations (
-                        sub_id, coach_id, position, gender, title, subtitle, script,
-                        is_morning, is_afternoon, is_night
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        sub_id,
-                        coach_id,
-                        record_pos,
-                        gender_flag,
-                        entry["title"],
-                        entry["popular_aff"],
-                        entry["script"],
-                        is_flags["morning"],
-                        is_flags["afternoon"],
-                        is_flags["night"],
-                    ),
-                )
-                count += 1
+                    if not entry:
+                        continue
+                    record_pos = record.get("position")
+                    is_flags = {
+                        time_of_day: int(
+                            self._has_preview(cat_pos, sub_pos, coach_id, record_pos, gender, language, time_of_day)
+                        )
+                        for time_of_day in self.TIMES
+                    }
+                    gender_flag = 1 if gender == "male" else 0
+                    cur.execute(
+                        """
+                        INSERT INTO affirmations (
+                            sub_id, coach_id, position, gender, title, subtitle, script,
+                            morning_aff, afternoon_aff, evening_aff,
+                            is_morning, is_afternoon, is_night
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            sub_id,
+                            coach_id,
+                            record_pos,
+                            gender_flag,
+                            entry["title"],
+                            entry["popular_aff"],
+                            entry["script"],
+                            entry.get("morning_aff"),
+                            entry.get("afternoon_aff"),
+                            entry.get("evening_aff"),
+                            is_flags["morning"],
+                            is_flags["afternoon"],
+                            is_flags["night"],
+                        ),
+                    )
+                    count += 1
+                except Exception as exc:
+                    logger.exception(
+                        "[BUSINESS] Export entry failed",
+                        cat_pos=cat_pos,
+                        sub_pos=sub_pos,
+                        sub_id=sub_id,
+                        coach_id=coach_id,
+                        record_id=record.get("id"),
+                        gender=gender,
+                        language=language,
+                        error=str(exc),
+                    )
+                    raise
         return count
 
     def _has_preview(
@@ -354,10 +402,27 @@ class Step99ExportData(BaseStep):
         value = localization.get(language)
         return str(value).strip() if value else None
 
+    def _compute_daily_suitable(self, subcategory: Dict[str, Any]) -> int:
+        if "is_daily_suitable" not in subcategory:
+            logger.error(
+                "[BUSINESS] Export fatal | missing is_daily_suitable | sub_id={} cat_id={} payload_keys={} query_select={}",
+                subcategory.get("id"),
+                subcategory.get("category_id"),
+                sorted(subcategory.keys()),
+                "id, category_id, position, localization, shadow_w, shadow_m, views, is_daily_suitable",
+            )
+            raise FatalStepError(
+                f"Field is_daily_suitable is missing in subcategories payload | sub_id={subcategory.get('id')} "
+                f"cat_id={subcategory.get('category_id')}"
+            )
+        value = subcategory.get("is_daily_suitable")
+        return 1 if value is True or value is None else 0
+
     def _extract_script_entry(
         self,
         script_map: Dict[str, Any],
         popular_map: Dict[str, Any],
+        banners_map: Optional[Dict[str, Any]],
         gender: str,
         language: str,
         category: Dict[str, Any],
@@ -379,15 +444,23 @@ class Step99ExportData(BaseStep):
             return None
         if not popular_line:
             logger.error(
-                "[BUSINESS] Export skip | reason=no_popular cat={} sub={} coach={} gender={} lang={}",
+                "[BUSINESS] Export skip | reason=no_popular cat={} sub={} sub_id={} coach={} gender={} lang={}",
                 category.get("position"),
                 subcategory.get("position"),
+                subcategory.get("id"),
                 coach.get("coach"),
                 gender,
                 language,
             )
             return None
-        return {"title": title, "script": script, "popular_aff": popular_line}
+        return {
+            "title": title,
+            "script": script,
+            "popular_aff": popular_line,
+            "morning_aff": self._extract_time_aff(banners_map, gender, language, "morning"),
+            "afternoon_aff": self._extract_time_aff(banners_map, gender, language, "afternoon"),
+            "evening_aff": self._extract_time_aff(banners_map, gender, language, "late evening"),
+        }
 
     def _extract_popular_line(self, popular_map: Dict[str, Any], gender: str, language: str) -> Optional[str]:
         if not isinstance(popular_map, dict):
@@ -397,6 +470,24 @@ class Step99ExportData(BaseStep):
             return None
         line = gender_block.get(language)
         return str(line).strip() if line else None
+
+    def _extract_time_aff(
+        self,
+        banners_map: Optional[Dict[str, Any]],
+        gender: str,
+        language: str,
+        time_of_day: str,
+    ) -> Optional[str]:
+        if not isinstance(banners_map, dict):
+            return None
+        gender_block = banners_map.get(gender)
+        if not isinstance(gender_block, dict):
+            return None
+        lang_block = gender_block.get(language)
+        if not isinstance(lang_block, dict):
+            return None
+        value = lang_block.get(time_of_day)
+        return str(value).strip() if value else None
 
     def _fetch_categories(self) -> List[Dict[str, Any]]:
         try:
@@ -409,7 +500,7 @@ class Step99ExportData(BaseStep):
         try:
             response = (
                 self.supabase.table("subcategories")
-                .select("id, position, localization")
+                .select("id, category_id, position, localization, shadow_w, shadow_m, views, is_daily_suitable")
                 .eq("category_id", category_id)
                 .order("position")
                 .execute()
@@ -439,7 +530,7 @@ class Step99ExportData(BaseStep):
         try:
             response = (
                 self.supabase.table("affirmations_new")
-                .select("id, position, script, popular_aff")
+                .select("id, position, script, popular_aff, aff_for_banners")
                 .eq("subcategory_id", subcategory_id)
                 .eq("coach_id", coach_id)
                 .order("position")

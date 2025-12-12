@@ -4,13 +4,14 @@ steps:
   fill_views: false
   generate_affirmations: false
   script_affirmations: false
+  make_affirmations: false
   generate_audio: false # в 10 потоков
   music_prompts: false
   compose_music: false # в 5 потоков
-  make_affirmations: false
   daily_affirmations: false
   popular_affirmations: false
-  export_data: false
+  coach_affirmation_for_time_of_day: false
+  export_data: true
 
 script_affirmations_add_pauses: false
 generate_audio_stub: false
@@ -20,12 +21,12 @@ threads_audio: 10
 threads_music: 5
 
 range:
-  categories: [3, 3]
-  subcategories: [3, 3]
+  categories: [1, -1]
+  subcategories: [1, -1]
   positions: [1, 3]
 
 languages: [EN] # [RU, EN, ES, FR, DE, IT, HI, KO, JA, NL] # [RU, EN, ES, PT, FR, DE, IT, TR, HI, ID, KO, JA, TH, VI, MS, NL]
-versions: [Snoop Dogg] # [Neville Goddard, Roxie Nafousi, Oprah Winfrey, Louise Hay, Napoleon Hill, Snoop Dogg, Eckhart Tolle]
+versions: [Neville Goddard, Roxie Nafousi, Oprah Winfrey, Louise Hay, Napoleon Hill, Snoop Dogg, Eckhart Tolle] # [Neville Goddard, Roxie Nafousi, Oprah Winfrey, Louise Hay, Napoleon Hill, Snoop Dogg, Eckhart Tolle, Flame]
 voices: [1, 2, 3]
 affirmations_per_subcategory: 10
 regenerate_affirmations: false

@@ -13,6 +13,10 @@
 | `subcategories` | `id` | INTEGER PRIMARY KEY | `subcategories.id` |
 | | `position` | INTEGER | `subcategories.position` |
 | | `name` | TEXT NOT NULL | `subcategories.localization[gender].title[LANG]` (предпочитаем female, fallback male) |
+| | `shadow_w` | TEXT NOT NULL | `subcategories.shadow_w` |
+| | `shadow_m` | TEXT NOT NULL | `subcategories.shadow_m` |
+| | `views` | INTEGER NOT NULL | `subcategories.views` |
+| | `is_daily_suitable` | INTEGER NOT NULL | 1 если `subcategories.is_daily_suitable` = `true` или `NULL`, иначе 0 |
 | | `category_id` | INTEGER NOT NULL | FK на `categories.id` |
 | `coaches` | `id` | INTEGER PRIMARY KEY | `coaches.id` |
 | | `position` | INTEGER | `coaches.position` |
@@ -25,6 +29,9 @@
 | | `title` | TEXT NOT NULL | `affirmations_new.script[gender][LANG].title` |
 | | `subtitle` | TEXT NOT NULL | `affirmations_new.popular_aff[gender][LANG]` |
 | | `script` | TEXT NOT NULL | `affirmations_new.script[gender][LANG].script` |
+| | `morning_aff` | TEXT | `affirmations_new.aff_for_banners[gender][LANG].morning` |
+| | `afternoon_aff` | TEXT | `affirmations_new.aff_for_banners[gender][LANG].afternoon` |
+| | `evening_aff` | TEXT | `affirmations_new.aff_for_banners[gender][LANG]["late evening"]` |
 | | `is_morning` | INTEGER NOT NULL | 1/0 по наличию webp `<...>_morning.webp` |
 | | `is_afternoon` | INTEGER NOT NULL | Аналогично для `_afternoon.webp` |
 | | `is_night` | INTEGER NOT NULL | Аналогично для `_night.webp` |
@@ -39,6 +46,8 @@
   - `coaches.coach_UI_description[LANG]` — текст описания.
   - `affirmations_new.script[gender][LANG]` — `title` и `script`.
   - `affirmations_new.popular_aff[gender][LANG]` — короткая “вирусная” строка (идёт в `subtitle`).
+  - `affirmations_new.aff_for_banners[gender][LANG]` — мантры по времени дня: `morning`, `afternoon`, `late evening` (кладём в `morning_aff/afternoon_aff/evening_aff` соответственно; если нет — `NULL`).
+- Флаг пригодности: `subcategories.is_daily_suitable` — обязательно присутствует; `true` или `NULL` → `1`, иначе `0` в экспортируемой таблице `subcategories`.
 - Превью (шаг 10): `./export/daily_previews/<cat>_<sub>_<coach_id>_<pos>_<m|w>_<lang>_<time>.webp` — по наличию определяем `is_morning/is_afternoon/is_night`.
 - Каталог экспорта: `./export/`.
 
@@ -66,16 +75,18 @@ languages: [EN, RU, ...]
    1. Перезаписываем `./export/content_<lang>.db`.
    2. Создаём таблицы:
       - `categories(id, position, name)`
-      - `subcategories(id, position, name, category_id)`
+      - `subcategories(id, position, name, shadow_w, shadow_m, views, category_id)`
       - `coaches(id, position, name, description)`
       - `affirmations(sub_id, coach_id, position, gender, title, subtitle, script, is_morning, is_afternoon, is_night)`
    3. Проходим по дереву:
       - В `categories` пишем строки только с доступной локализацией на языке.
       - `subcategories.name` берём из `localization[gender].title[LANG]` (женский, иначе мужской).
+      - `subcategories.shadow_w/shadow_m` — как есть из таблицы `subcategories`; `views` — из `subcategories.views`.
       - `coaches` — `coach_name` (fallback `coach`), `coach_UI_description[LANG]`.
       - Каждая запись `affirmations_new` порождает до двух строк (`gender=female/male`):
         - `title/script` — из `affirmations_new.script`.
         - `subtitle` — из `popular_aff[gender][LANG]`; отсутствие => логируем ошибку и пропускаем запись.
+        - `morning_aff/afternoon_aff/evening_aff` — из `aff_for_banners[gender][LANG]` (`late evening` кладём в `evening_aff`). Если какого-то слота нет, оставляем `NULL`.
         - `gender` — 0 для female, 1 для male.
         - `is_*` — ставим `1`, если в `./export/daily_previews` есть файл `<cat>_<sub>_<coach_id>_<pos>_<m|w>_<lang>_<time>.webp`, иначе `0`.
    4. После обработки каждой категории логируем прогресс: `[BUSINESS] Export progress | lang=EN cat=3/10 aff=120`.

@@ -19,10 +19,7 @@ Not a dramatic lift, but a subtle elevation — a widening, a softening, or a qu
 This uplift should grow naturally from the meaning of the text.
 
 In addition to uplift, allow the music to carry a gentle sense of positivity — a quiet, warm brightness that is subtle and supportive, not cheerful or pushy.
-
-However, do NOT smooth over the emotional tension, honesty, friction, or pressure inside the script.
-The music must honor the darker, heavier, confronting, or vulnerable elements of the episode before it rises.
-This positivity is felt as soft inner light, ease, and gentle optimism — but only after the score acknowledges the truth, weight, or resistance present in the text.
+This positivity is felt as soft inner light, ease, and gentle optimism.
 It should arise naturally from the episode’s meaning and never overpower the calm tone of the affirmation.
 
 
@@ -30,22 +27,21 @@ It should arise naturally from the episode’s meaning and never overpower the c
 1. Read the affirmation_script and determine:
    - the emotional starting point,
    - the emotional destination,
-   - the real emotional friction or conflict the speaker is moving through,
    - 1–3 core ideas that define the inner movement.
 
 ### Episode-specific identity
 2. Identify **the unique narrative angle of this episode**.
-   Even when episodes share the same affirmation, each script expresses it through a slightly different lens (law, tone, inevitability, completion, already-paid, agreement, relief, openness, sovereignty, friction, reckoning, release, ignition, etc.).
+   Even when episodes share the same affirmation, each script expresses it through a slightly different lens (law, tone, inevitability, completion, already-paid, agreement, relief, openness, sovereignty, etc.).
    This *episode-specific angle* must become the **musical identity** of the track.
 
 ### Coach technique
 3. Identify **a subtle technique of the coach** that appears in this specific episode
-   (a quiet pause, a shift of certainty, an anticipatory breath, an inward softening, a confrontational snap, a moment of pressure, a declarative calm, etc.).
+   (a quiet pause, a shift of certainty, an anticipatory breath, an inward softening, a declarative calm, etc.).
    Let this technique shape the musical behavior and become the distinguishing element of this episode.
 
 ### Alternative emotional facet (critical for diversity)
 4. Before choosing the musical world, reinterpret the script through **one additional emotional lens** that also fits the text.
-   Even if the script expresses law, certainty, or inevitability, it can also carry secondary colors such as luminosity, softness, calm joy, gentle expansion, quiet relief, spacious clarity, dignified confidence, or subtle forward-flow, controlled tension, inner heat, or raw honesty.
+   Even if the script expresses law, certainty, or inevitability, it can also carry secondary colors such as luminosity, softness, calm joy, gentle expansion, quiet relief, spacious clarity, dignified confidence, or subtle forward-flow.
    Select one such secondary color intuitively and let it shift the musical world in a meaningful way.
    This creates episodes that share the same truth but feel like **distinct emotional facets**.
 
@@ -57,7 +53,6 @@ From the meaning, theme, coach energy, and chosen emotional facet — **you deci
 - 2–4 main instruments or textures.
 
 Do not use predefined lists; choose intuitively from the emotional logic of this specific episode.
-Do not force softness if the script begins in tension — let the music start where the emotion starts.
 
 ### Freedom to vary deep musical parameters
 You are free to change deep musical parameters from episode to episode.
@@ -67,7 +62,7 @@ Do not assume a stable palette across episodes.
 ### Gentle creative unpredictability
 After choosing the natural musical solution, consider a different interpretation that also fits the meaning — and choose the one that feels more interesting, alive, or quietly surprising, while still aligned with the episode’s truth.
 This is not randomness; it is creative divergence.
-Let the final choice carry a small intentional element of surprise, as if revealing another facet of the same inner truth — including facets that feel heavier, sharper, or more confrontational if the script supports it.
+Let the final choice carry a small intentional element of surprise, as if revealing another facet of the same inner truth.
 
 ## Structure
 Create a simple three-part form proportional to `affirmation_duration`:
@@ -76,7 +71,7 @@ Create a simple three-part form proportional to `affirmation_duration`:
 - last third — stabilization.
 
 Describe how density, width, motion, and harmonic openness evolve.
-Let the arc reflect **the episode’s unique angle**, not a generic pattern — especially if the episode carries pressure, tension, or emotional ignition that must resolve honestly.
+Let the arc reflect **the episode’s unique angle**, not a generic pattern.
 
 ## Motif
 Decide if a motif is needed. If yes, keep it minimal and supportive.
@@ -85,12 +80,9 @@ Decide if a motif is needed. If yes, keep it minimal and supportive.
 Describe general principles (no timestamps):
 - subtle lift or widening on identity phrases (“I am…”, “I choose…”, “I receive…”),
 - soft stillness or a sustained chord after significant lines.
-- tightening or pressure-building texture before emotionally charged lines,
-- brief narrowing or drop to stillness after moments of emotional honesty.
 
 ## Space and mix
 Describe the sense of space (intimate or wide), warmth, clarity, and how the mix leaves room for the voice.
-Avoid smoothing the edges — allow some rawness, pressure, or grit if the script carries it.
 
 ## Output format
 Do not mention any names or quote the affirmation.

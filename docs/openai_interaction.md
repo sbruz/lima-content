@@ -83,6 +83,13 @@
   `{"line": str}` — ровно одна готовая строка.
 - **Особенности:** используется `LLMClient` с `response_schema`, модель по умолчанию `gpt-5` (переопределяется через `ids.popular_aff_model`). Ответ приводим к строке и сохраняем в `affirmations_new.popular_aff`.
 
+### 2.9 Step12 — `coach_affirmation_for_time_of_day`
+- **Промпт:** `docs/agents/coach_aff_style.md` (подставляем `{coach_adjustment}` и одно из `morning | afternoon | late evening` в `{time_of_day}`).
+- **Запрос:** `{"technical_affirmation": "<text>", "gender": "female|male", "time_of_day": "morning|afternoon|late evening"}`.
+- **Ответ:** Pydantic‑схема `CoachAffirmationForTimeOfDay`  
+  `{"line": str}` — одна короткая завершённая мантра.
+- **Особенности:** модель по умолчанию `gpt-5.1` (переопределяется через `ids.coach_aff_time_model`). Языки берутся из `config.languages` и используются в верхнем регистре; шаг опирается на входной `popular_aff` по полу/языку. Если ответ >70 символов (длина строки), делается до 5 повторов; после 5 неудач логируется ошибка, успешные ответы складываются в `affirmations_new.aff_for_banners` по полу/языку/времени дня.
+
 ---
 
 ## 3. Что делать при изменениях
