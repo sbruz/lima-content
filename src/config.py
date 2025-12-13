@@ -80,6 +80,8 @@ class Config(BaseModel):
     threads: int = Field(4, gt=0)
     threads_audio: int = Field(10, gt=0)
     threads_music: int = Field(5, gt=0)
+    regenerate_coach_affirmations: bool = Field(False)
+    coach_affirmation_char_limit: int = Field(70, gt=0)
     retry: RetrySettings = Field(default_factory=RetrySettings)
     rate_limits: Dict[str, RateLimit] = Field(default_factory=dict)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)

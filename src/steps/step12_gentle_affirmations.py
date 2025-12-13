@@ -30,7 +30,7 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
     GENDERS = ("female", "male")
     TIMES_OF_DAY = ("morning", "afternoon", "late evening")
     MAX_CHARS = 70
-    CHAR_LIMIT_ATTEMPTS = 5
+    CHAR_LIMIT_ATTEMPTS = 7
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -43,6 +43,8 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
         if not self.prompt_path.exists():
             raise FatalStepError(f"Prompt file not found: {self.prompt_path}")
         self.model_id = self.config.ids.get("coach_aff_time_model", "gpt-5.1")
+        self.force_regenerate = bool(self.config.regenerate_coach_affirmations)
+        self.max_chars = int(self.config.coach_affirmation_char_limit or self.MAX_CHARS)
 
     # --------------------------------------------------------------------- jobs
     def load_jobs(self) -> List[Job]:
@@ -137,7 +139,10 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
                     lang_block = {}
                 lang_had_content = bool(lang_block)
 
-                missing_times = self._find_missing_times(banners_map, gender, language)
+                if self.force_regenerate:
+                    missing_times = list(self.TIMES_OF_DAY)
+                else:
+                    missing_times = self._find_missing_times(banners_map, gender, language)
                 if missing_times:
                     missing_before.extend(f"{gender}:{language}:{time}" for time in missing_times)
                 else:
@@ -166,18 +171,19 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
 
         if failures:
             logger.error(
-                "<red>[BUSINESS] Gentle aff failures | record={} items={}</red>",
+                "[BUSINESS] Gentle aff failure | aff_id={} items={}",
                 record_id,
                 ", ".join(failures),
             )
 
         if updated:
             self._persist_banners(record_id, banners_map)
+            logger.info("[BUSINESS] ✅ aff_id={}", record_id)
 
         missing_after = self._collect_missing(banners_map, targets)
         if missing_after:
             logger.error(
-                "<red>[BUSINESS] Gentle aff missing after run | record={} missing_before={} missing_after={}</red>",
+                "[BUSINESS] Gentle aff missing after run | aff_id={} missing_before={} missing_after={}",
                 record_id,
                 ",".join(missing_before) if missing_before else "-",
                 ",".join(missing_after),
@@ -186,6 +192,7 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
                 f"Missing banner affirmations after generation: {record_id} missing={missing_after}"
             )
         if not updated:
+            logger.error("[BUSINESS] Gentle aff skipped | aff_id={}", record_id)
             return
 
     # ----------------------------------------------------------------- helpers
@@ -318,11 +325,11 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
                 raise RetryableStepError(f"Invalid gentle affirmation response: {exc}") from exc
 
             last_length = len(line)
-            if last_length <= self.MAX_CHARS:
+            if last_length <= self.max_chars:
                 return line
 
             logger.warning(
-                "[BUSINESS] Gentle aff retry | reason=char_limit chars={} attempt={} gender={} lang={} time={}",
+                "[BUSINESS] retry | c={} a={} {} {} {}",
                 last_length,
                 attempt,
                 gender,
@@ -331,7 +338,7 @@ class Step12CoachAffirmationForTimeOfDay(BaseStep):
             )
 
         logger.error(
-            "<red>[BUSINESS] Gentle aff failed | reason=char_limit chars={} gender={} lang={} time={}</red>",
+            "[BUSINESS] failed | chars={} {} {} {}",
             last_length,
             gender,
             language,

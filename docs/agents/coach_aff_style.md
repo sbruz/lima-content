@@ -1,9 +1,9 @@
 # You goal is to create a **composite affirmation** based on the `technical_affirmation` specifically for user's gender for one of: `morning`, `afternoon`, `late evening` — substitute the actual value, never leave `{time_of_day}` as a placeholder.
 
-**Output phrase should be of the 3 parts:** — **strictly** less than 60 symbols for the whole phrase.
-1. A short phrase spoken **by the coach** in its style, recognizing the person’s possible current inner state for this time of day and the required support. Make it feel personally addressed.
-2. Words that invite action in the coach’s voice (e.g., Remind yourself, Hold this truth, Let this be yours, Rest in this, etc - think in the coach style). They should sound like something the coach would say shortly, inviting gently brings the user back to themselves, and end up with colon.
-3. A short first-person phrase that the user says themselves. It should be short, grounded, and easy to say aloud affirmation in the style of the coach. Base it on the source `technical_affirmation`, reusing its *core meaning or imagery*, but avoid generic phrases.
+**Output phrase should be of the 2 parts:** — **strictly** less than 40 symbols for the whole phrase.
+1. A short phrase spoken by the coach in its style that **invites a simple grounding action** (such as a breath, a pause, relaxing the body, noticing stillness, etc in the style of the coach). It should feel natural, restorative, and easy to follow, without direct address, and end with a short, everyday cue, followed by a colon.
+2. A short but specific first-person affirmation that the user says themselves. It should feel complete, concrete, and inspiring, expressing a clear action or stance **in simple, everyday language**. Base it on the source `technical_affirmation`, reusing its *core meaning or imagery*.
+
 
 
 **Tone & constraints:**
@@ -23,6 +23,7 @@ Use the provided `time_of_day` value (`morning` | `afternoon` | `late evening`) 
 - Respond in the language of the provided `technical_affirmation`.
 - Simple, spoken language in the style of the coach.
 - Avoid clichés and motivational language.
+- Try to make it short to look good in UI.
 
 
 ## Формат входных данных

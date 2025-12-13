@@ -88,6 +88,10 @@ class Step99ExportData(BaseStep):
         categories = filter_by_range(self._fetch_categories(), tuple(self.config.range.categories))
         coaches = self._fetch_coaches()
         if not coaches:
+            logger.warning(
+                "[BUSINESS] Export skip | reason=no_coaches_after_filter | requested_versions={}",
+                self.config.versions,
+            )
             return []
         for category in categories:
             subcategories = filter_by_range(
@@ -120,6 +124,14 @@ class Step99ExportData(BaseStep):
                         tuple(self.config.range.positions),
                     )
                     if not records:
+                        logger.warning(
+                            "[BUSINESS] Export skip coach | reason=no_records | cat_pos={} sub_pos={} sub_id={} coach_id={} coach={}",
+                            category.get("position"),
+                            subcategory.get("position"),
+                            subcategory.get("id"),
+                            coach.get("id"),
+                            coach.get("coach"),
+                        )
                         continue
                     coach_entry = {
                         "id": coach["id"],
@@ -127,22 +139,35 @@ class Step99ExportData(BaseStep):
                         "coach": coach.get("coach"),
                         "coach_name": coach.get("coach_name"),
                         "description": self._parse_json(coach.get("coach_UI_description")),
-                    "records": [
-                        {
-                            "id": record["id"],
-                            "position": record.get("position"),
-                            "script": self._parse_json(record.get("script")),
-                            "popular": self._parse_json(record.get("popular_aff")),
-                            "banners": self._parse_json(record.get("aff_for_banners")),
-                        }
-                        for record in records
-                    ],
-                }
-                sub_entry["coaches"].append(coach_entry)
+                        "records": [
+                            {
+                                "id": record["id"],
+                                "position": record.get("position"),
+                                "script": self._parse_json(record.get("script")),
+                                "popular": self._parse_json(record.get("popular_aff")),
+                                "banners": self._parse_json(record.get("aff_for_banners")),
+                            }
+                            for record in records
+                        ],
+                    }
+                    sub_entry["coaches"].append(coach_entry)
                 if sub_entry["coaches"]:
                     cat_entry["subcategories"].append(sub_entry)
+                else:
+                    logger.warning(
+                        "[BUSINESS] Export skip subcategory | reason=no_coach_entries | cat_pos={} sub_pos={} sub_id={}",
+                        category.get("position"),
+                        subcategory.get("position"),
+                        subcategory.get("id"),
+                    )
             if cat_entry["subcategories"]:
                 dataset.append(cat_entry)
+            else:
+                logger.warning(
+                    "[BUSINESS] Export skip category | reason=no_subcategories | cat_pos={} cat_id={}",
+                    category.get("position"),
+                    category.get("id"),
+                )
         return dataset
 
     def _init_schema(self, conn: sqlite3.Connection) -> None:
@@ -213,6 +238,11 @@ class Step99ExportData(BaseStep):
         for category in self._dataset:
             cat_title = self._get_category_title(category["localization"], language)
             if not cat_title:
+                logger.warning(
+                    "[BUSINESS] Export skip category | reason=no_localization | lang={} cat_id={}",
+                    language,
+                    category.get("id"),
+                )
                 continue
             category_used = False
             cat_id = category["id"]
@@ -225,6 +255,12 @@ class Step99ExportData(BaseStep):
             for subcategory in category["subcategories"]:
                 sub_name = self._get_subcategory_name(subcategory["localization"], language)
                 if not sub_name:
+                    logger.warning(
+                        "[BUSINESS] Export skip subcategory | reason=no_localization | lang={} sub_id={} cat_id={}",
+                        language,
+                        subcategory.get("id"),
+                        cat_id,
+                    )
                     continue
                 sub_id = subcategory["id"]
                 if sub_id not in inserted_subcategories:
@@ -306,6 +342,16 @@ class Step99ExportData(BaseStep):
                         coach,
                     )
                     if not entry:
+                        logger.warning(
+                            "[BUSINESS] Export skip record | reason=no_script_entry | lang={} gender={} cat_pos={} sub_pos={} coach={} coach_id={} record_pos={}",
+                            language,
+                            gender,
+                            cat_pos,
+                            sub_pos,
+                            coach.get("coach"),
+                            coach_id,
+                            record.get("position"),
+                        )
                         continue
                     record_pos = record.get("position")
                     is_flags = {
@@ -430,17 +476,53 @@ class Step99ExportData(BaseStep):
         coach: Dict[str, Any],
     ) -> Optional[Dict[str, str]]:
         if not isinstance(script_map, dict):
+            logger.warning(
+                "[BUSINESS] Export skip record | reason=script_not_dict | lang={} gender={} cat_pos={} sub_pos={} coach={} coach_id={}",
+                language,
+                gender,
+                category.get("position"),
+                subcategory.get("position"),
+                coach.get("coach"),
+                coach.get("id"),
+            )
             return None
         gender_block = script_map.get(gender)
         if not isinstance(gender_block, dict):
+            logger.warning(
+                "[BUSINESS] Export skip record | reason=no_gender_block | lang={} gender={} cat_pos={} sub_pos={} coach={} coach_id={}",
+                language,
+                gender,
+                category.get("position"),
+                subcategory.get("position"),
+                coach.get("coach"),
+                coach.get("id"),
+            )
             return None
         lang_entry = gender_block.get(language)
         if not isinstance(lang_entry, dict):
+            logger.warning(
+                "[BUSINESS] Export skip record | reason=no_lang_entry | lang={} gender={} cat_pos={} sub_pos={} coach={} coach_id={}",
+                language,
+                gender,
+                category.get("position"),
+                subcategory.get("position"),
+                coach.get("coach"),
+                coach.get("id"),
+            )
             return None
         title = (lang_entry.get("title") or "").strip()
         script = (lang_entry.get("script") or "").strip()
         popular_line = self._extract_popular_line(popular_map, gender, language)
         if not title or not script:
+            logger.warning(
+                "[BUSINESS] Export skip record | reason=empty_title_or_script | lang={} gender={} cat_pos={} sub_pos={} coach={} coach_id={}",
+                language,
+                gender,
+                category.get("position"),
+                subcategory.get("position"),
+                coach.get("coach"),
+                coach.get("id"),
+            )
             return None
         if not popular_line:
             logger.error(
@@ -524,6 +606,14 @@ class Step99ExportData(BaseStep):
         except Exception as exc:
             raise FatalStepError(f"Failed to load coaches: {exc}") from exc
         data = getattr(response, "data", []) or []
+        fetched = {row.get("coach") for row in data if row.get("coach")}
+        missing = [name for name in desired if name not in fetched]
+        if missing:
+            logger.warning(
+                "[BUSINESS] Export coach filter | missing_from_db={} requested_versions={}",
+                missing,
+                desired,
+            )
         return data
 
     def _fetch_affirmations(self, subcategory_id: Any, coach_id: Any) -> List[Dict[str, Any]]:

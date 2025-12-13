@@ -16,7 +16,7 @@ steps:
 script_affirmations_add_pauses: false
 generate_audio_stub: false
 
-threads: 20
+threads: 1
 threads_audio: 10
 threads_music: 5
 
@@ -30,6 +30,8 @@ versions: [Neville Goddard, Roxie Nafousi, Oprah Winfrey, Louise Hay, Napoleon H
 voices: [1, 2, 3]
 affirmations_per_subcategory: 10
 regenerate_affirmations: false
+regenerate_coach_affirmations: true
+coach_affirmation_char_limit: 70
 music_prompt_tail_sec: 5
 
 retry:
